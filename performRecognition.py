@@ -8,7 +8,7 @@ import numpy as np
 import argparse as ap
 from PIL import Image
 import scipy.misc
-Label = ['0','1','2','3','4','5','6','7','8','9','div','=','-','+','times']
+Label = ['0','1','2','3','4','5','6','7','8','9',')','=','-','+','*','/','(']
 def recognize(fn):
     clf, pp = joblib.load("digits_cls.pkl")
     # My image is a 200x374 jpeg that is 102kb large
