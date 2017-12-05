@@ -9,16 +9,18 @@ import cgi
 import shutil
 import mimetypes
 import re
+
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
 
 import performRecognition
-#import predict_2
+# import predict_2
+import json
+
 
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-
     """Simple HTTP request handler with GET/HEAD/POST commands.
 
     This serves files from the current directory and any of its
@@ -31,61 +33,106 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     """
 
-    #server_version = "SimpleHTTPWithUpload/" + __version__
+    # server_version = "SimpleHTTPWithUpload/" + __version__
 
     def do_GET(self):
-        #print "Serve a GET request."
+        # print "Serve a GET request."
         f = self.send_head()
         if f:
             self.copyfile(f, self.wfile)
             f.close()
 
     def do_HEAD(self):
-        #print "Serve a HEAD request."
+        # print "Serve a HEAD request."
         f = self.send_head()
         if f:
             f.close()
 
     def do_POST(self):
-        #print "Serve a POST request."
-        r, info,fn = self.deal_post_data()
+        expression_label_list = []
+        num_list = []
+        final_list = []
+        stack = []
+        expression = ""
+        result = 0
+        breaker=[]
+        # print "Serve a POST request."
+        print "enter into do_POST"
+        r, info, fn = self.deal_post_data()
 
-        #print r, info, fn
-        performRecognition.recognize(fn)
-        #predict_2.main("2.png")
-        self.send_response(200)
-        size = os.path.getsize(fn)
-        # print type(fn)
-        # print type(self.wfile)
+        # print r, info, fn
+        try:
+            expression_label_list = performRecognition.recognize(fn)
+            breaker = [i for i, x in enumerate(expression_label_list) if x > 10]
 
-        # #print "size",size
-        self.send_header("Content-Description", "File Transfer")
-        self.send_header("Content-Type","application/octet-stream")
-        self.send_header("Cache-Control"," public, must-revalidate, max-age=0")
-        self.send_header("Pragma","no-cache")
-        self.send_header("Accept-Ranges", "bytes")
-        self.send_header("Content-Length",size)
-        self.send_header("Content-Disposition", "inline; filename="+fn)
-        self.send_header("Content-Transfer-Encoding:","binary\n")
-        self.send_header("Connection", "Close")
-        self.end_headers()
+            flag = 0
+            for i, val in enumerate(breaker):
+                if i == len(breaker) - 1:
+                    temp1 = expression_label_list[flag:val]
+                    temp2 = expression_label_list[val + 1:]
+                    num_list.append(temp1)
+                    if expression_label_list[val] == 12:
+                        num_list.append("-")
+                    elif expression_label_list[val] == 13:
+                        num_list.append("+")
+                    num_list.append(temp2)
+                else:
+                    temp3 = expression_label_list[flag:val]
+                    num_list.append(temp3)
+                    flag = val + 1
+                    if expression_label_list[val] == 12:
+                        num_list.append("-")
+                    elif expression_label_list[val] == 13:
+                        num_list.append("+")
+            print(num_list)
 
-        data = open(fn, 'rb')
-        l=data.read(1024)
-        remainBytes = size
-        self.wfile.write(l)
-        #print "remainBytes:",remainBytes
-        while(remainBytes - 1024>0):
-            remainBytes = remainBytes - 1024
-            #print "remainBytes:", remainBytes
-            bufferSize = min(remainBytes,1024)
-            l = data.read(bufferSize)
-            self.wfile.write(l)
-           #print "bufferSize",bufferSize
-        self.wfile.close()
+            for i in num_list:
+                if i == "+" or i == "-":
+                    final_list.append(i)
+                else:
+                    x = 0
+                    operator = 0
+                    while x <= len(i) - 1:
+                        operator += i[x] * pow(10, (len(i) - x - 1))
+                        x += 1
+                    final_list.append(operator)
+            print(final_list)
 
 
-        
+            temp = ""
+            for index, item in enumerate(final_list):
+                expression += str(item)
+                if index == len(final_list) - 1:
+                    if temp == "-":
+                        result = stack.pop() - item
+                    elif temp == "+":
+                        result = stack.pop() + item
+                else:
+                    if item != "+" and item != "-":
+                        if len(stack) == 0:
+                            stack.append(item)
+                        elif len(stack) == 1:
+                            if temp == "-":
+                                stack.append(stack.pop() - item)
+                            elif temp == "+":
+                                stack.append(stack.pop() + item)
+                    else:
+                        temp = item
+
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            expression=expression+"="+str(result)
+            self.wfile.write(json.dumps(expression))
+            self.wfile.close()
+        except ValueError:
+            d = "server error"
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+
+            self.wfile.write(json.dumps(d))
+
     def deal_post_data(self):
         print "Deal Picture"
         boundary = self.headers.plisttext.split("=")[1]
@@ -96,26 +143,26 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return (False, "Content NOT begin with boundary")
         line = self.rfile.readline()
         remainbytes -= len(line)
-        #print "line",line
+        # print "line",line
         fn = re.findall(r'Content-Disposition: form-data; name="file"; filename="(.*)"', line)
-        print "fn",fn
+        print "fn", fn
 
         if not fn:
-            return (False, "Can't find out file name...","0")
+            return (False, "Can't find out file name...", "0")
         path = self.translate_path(self.path)
         fn = os.path.join(path, fn[0])
-        #print "path",fn
+        # print "path",fn
         line = self.rfile.readline()
-        #print "line", line
+        # print "line", line
         remainbytes -= len(line)
         line = self.rfile.readline()
-        #print "line", line
+        # print "line", line
         remainbytes -= len(line)
         try:
             out = open(fn, 'wb')
         except IOError:
-            return (False, "Can't create file to write, do you have permission to write?",fn)
-                
+            return (False, "Can't create file to write, do you have permission to write?", fn)
+
         preline = self.rfile.readline()
         remainbytes -= len(preline)
         while remainbytes > 0:
@@ -125,14 +172,14 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 preline = preline[0:-1]
                 if preline.endswith('\r'):
                     preline = preline[0:-1]
-                #print preline,"\n"
+                # print preline,"\n"
                 out.write(preline)
                 out.close()
                 return (True, "File '%s' upload success!" % fn, fn)
             else:
                 out.write(preline)
                 preline = line
-        return (False, "Unexpect Ends of data.",fn)
+        return (False, "Unexpect Ends of data.", fn)
 
     def send_head(self):
         """Common code for GET and HEAD commands.
@@ -148,7 +195,6 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # "send_head"
         path = self.translate_path(self.path)
         f = None
-
         if os.path.isdir(path):
             if not self.path.endswith('/'):
                 # redirect browser - doing basically what apache does
@@ -234,8 +280,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         """
         # abandon query parameters
-        path = path.split('?',1)[0]
-        path = path.split('#',1)[0]
+        path = path.split('?', 1)[0]
+        path = path.split('#', 1)[0]
         path = posixpath.normpath(urllib.unquote(path))
         words = path.split('/')
         words = filter(None, words)
@@ -288,26 +334,29 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return self.extensions_map['']
 
     if not mimetypes.inited:
-        mimetypes.init() # try to read system mime.types
+        mimetypes.init()  # try to read system mime.types
     extensions_map = mimetypes.types_map.copy()
     extensions_map.update({
-        '': 'application/octet-stream', # Default
+        '': 'application/octet-stream',  # Default
         '.py': 'text/plain',
         '.c': 'text/plain',
         '.h': 'text/plain',
-        })
+    })
+
+
 def load(file):
-            with open(file, 'r') as file:
-                return encode(str(file.read()))
+    with open(file, 'r') as file:
+        return encode(str(file.read()))
+
 
 def encode(file):
-            return bytes(file)
+    return bytes(file)
 
-def test(HandlerClass = SimpleHTTPRequestHandler, ServerClass = BaseHTTPServer.HTTPServer):
-    #print"start"
-    #performRecognition.recognize("test413.jpg")
+
+def test(HandlerClass=SimpleHTTPRequestHandler, ServerClass=BaseHTTPServer.HTTPServer):
+    # print"start"
+    # performRecognition.recognize("test413.jpg")
     BaseHTTPServer.test(HandlerClass, ServerClass)
 
 
 test()
-

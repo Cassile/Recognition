@@ -1,9 +1,7 @@
 import os
 from PIL import Image
 from array import *
-from random import shuffle
 from sklearn.externals import joblib
-from sklearn import datasets
 from skimage.feature import hog
 from sklearn.svm import LinearSVC
 from sklearn import preprocessing
