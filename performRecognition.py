@@ -13,7 +13,7 @@ def recognize(fn):
     i = 0
     clf, pp = joblib.load("digits_cls.pkl")
     foo = Image.open(fn)
-    print "original",foo.size
+    #print "original",foo.size
     w,l = foo.size
     if(w>l):
         rotation = 0
@@ -136,7 +136,7 @@ def calculate(l):
         print c
         return c
 
-if __name__ == '__main__':
-    sys.exit(recognize(sys.argv[1]))
-#recognize('test130.jpg')
+# if __name__ == '__main__':
+#     sys.exit(recognize(sys.argv[1]))
+recognize('image/test89.jpg')
 #getNumber([8,5,13,4,9])
