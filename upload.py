@@ -150,7 +150,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if not fn:
             return (False, "Can't find out file name...", "0")
         path = self.translate_path(self.path)
-        fn = os.path.join(path, fn[0])
+        fn = os.path.join(path+'/image', fn[0])
         # print "path",fn
         line = self.rfile.readline()
         # print "line", line
