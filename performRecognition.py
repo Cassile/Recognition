@@ -197,9 +197,9 @@ def calculate(number_list,l):
         print c
         return  c
 
-# if __name__ == '__main__':
-#     sys.exit(recognize(sys.argv[1]))
-recognize('image/test221.jpg')
+if __name__ == '__main__':
+    sys.exit(recognize(sys.argv[1]))
+#recognize('image/test221.jpg')
 #l = getNumber([2,10,2,12,5],'expression')
 #print l
 
