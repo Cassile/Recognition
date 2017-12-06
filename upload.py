@@ -62,63 +62,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         # print r, info, fn
         try:
-            expression_label_list = performRecognition.recognize(fn)
-            breaker = [i for i, x in enumerate(expression_label_list) if x > 10]
-
-            flag = 0
-            for i, val in enumerate(breaker):
-                if i == len(breaker) - 1:
-                    temp1 = expression_label_list[flag:val]
-                    temp2 = expression_label_list[val + 1:]
-                    num_list.append(temp1)
-                    if expression_label_list[val] == 12:
-                        num_list.append("-")
-                    elif expression_label_list[val] == 13:
-                        num_list.append("+")
-                    num_list.append(temp2)
-                else:
-                    temp3 = expression_label_list[flag:val]
-                    num_list.append(temp3)
-                    flag = val + 1
-                    if expression_label_list[val] == 12:
-                        num_list.append("-")
-                    elif expression_label_list[val] == 13:
-                        num_list.append("+")
-            print(num_list)
-
-            for i in num_list:
-                if i == "+" or i == "-":
-                    final_list.append(i)
-                else:
-                    x = 0
-                    operator = 0
-                    while x <= len(i) - 1:
-                        operator += i[x] * pow(10, (len(i) - x - 1))
-                        x += 1
-                    final_list.append(operator)
-            print(final_list)
-
-
-            temp = ""
-            for index, item in enumerate(final_list):
-                expression += str(item)
-                if index == len(final_list) - 1:
-                    if temp == "-":
-                        result = stack.pop() - item
-                    elif temp == "+":
-                        result = stack.pop() + item
-                else:
-                    if item != "+" and item != "-":
-                        if len(stack) == 0:
-                            stack.append(item)
-                        elif len(stack) == 1:
-                            if temp == "-":
-                                stack.append(stack.pop() - item)
-                            elif temp == "+":
-                                stack.append(stack.pop() + item)
-                    else:
-                        temp = item
-
+            expression, result = performRecognition.recognize(fn)
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()

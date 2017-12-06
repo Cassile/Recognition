@@ -102,8 +102,9 @@ def recognize(fn):
     cv2.namedWindow("Resulting Image with Rectangular ROIs", cv2.WINDOW_NORMAL)
     cv2.imshow("Resulting Image with Rectangular ROIs", im)
     cv2.waitKey()
-    print result
-    return  result
+    expression, calculated_value = getNumber(result)
+    #formula =
+    return  expression, calculated_value
 def getNumber(l):
     t = [i for i, x in enumerate(l) if x >= 10]
     #print t
@@ -130,8 +131,9 @@ def getNumber(l):
         n = n + 1
     number_list.append(int(last_value))
     symbol_list = [l[index] for index in t]
-    print symbol_list
-    return calculate(number_list,symbol_list)
+    expression = [Label[index] for index in number_list]
+    print expression
+    return expression, calculate(number_list,symbol_list)
 
 def calculate(number_list,l):
     t = number_list[0:3]
