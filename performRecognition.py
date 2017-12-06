@@ -67,14 +67,14 @@ def recognize(fn):
     max_index = np.argmax(areas)
     for ctr in ctrs:
         area = cv2.contourArea(ctr)
-        if area>100:
+        if 500>area>100:
             # Draw the rectangles
             rect = cv2.boundingRect(ctr)
             cv2.rectangle(im, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (0, 255, 0), 3)
             # Make the rectangular region around the digit
             # Mke the rectangular with some space around
             try:
-                leng = int(rect[3] * 1.2)
+                leng = int(rect[3] * 1.6)
                 pt1 = int(rect[1] + rect[3] // 2 - leng // 2)
                 pt2 = int(rect[0] + rect[2] // 2 - leng // 2)
                 roi = im_th[pt1:pt1 + leng, pt2:pt2 + leng]
@@ -131,19 +131,19 @@ def getNumber(l):
         n = n + 1
     number_list.append(int(last_value))
     symbol_list = [l[index] for index in t]
-    expression = [Label[index] for index in number_list]
-    print expression
-    return expression, calculate(number_list,symbol_list)
+    return calculate(number_list,symbol_list)
 
 def calculate(number_list,l):
     t = number_list[0:3]
     print 'original first three', t
     del number_list[0:3]
+    expression = []
     if t[1]>=10:
         if t[1] == 10:
             if l.count(11) <= 0 and l.count(12) <= 0:
                 del l[0]
                 c = t[0]+t[2]
+                expression.extend([t[0],'+',t[2]])
                 number_list.insert(0, c)
 
             else:
@@ -159,6 +159,7 @@ def calculate(number_list,l):
             if l.count(11)<=0 and l.count(12) <= 0:
                 del l[0]
                 c = t[0]-t[2]
+                expression.extend([t[0], '-', t[2]])
                 number_list.insert(0, c)
             else:
                 symbol = l[0]
@@ -170,10 +171,12 @@ def calculate(number_list,l):
 
         elif t[1] == 12:
             c= t[0]*t[2]
+            expression.extend([t[0], '*', t[2]])
             del l[0]
             number_list.insert(0,c)
         elif t[1] == 13:
             c= t[0]/t[2]
+            expression.extend([t[0], '/', t[2]])
             del l[0]
             number_list.insert(0,c)
 
@@ -181,10 +184,10 @@ def calculate(number_list,l):
         return calculate(number_list,l)
     else:
         print c
-        return c
+        return expression, c
 
 # if __name__ == '__main__':
 #     sys.exit(recognize(sys.argv[1]))
-#recognize('image/test998.jpg')
-l = getNumber([2,10,2,12,5])
+recognize('image/test135.jpg')
+#l = getNumber([2,10,2,12,5])
 
