@@ -67,7 +67,7 @@ def recognize(fn):
     max_index = np.argmax(areas)
     for ctr in ctrs:
         area = cv2.contourArea(ctr)
-        if 500>area>100:
+        if 1000>area>100:
             # Draw the rectangles
             rect = cv2.boundingRect(ctr)
             cv2.rectangle(im, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (0, 255, 0), 3)
@@ -102,10 +102,17 @@ def recognize(fn):
     cv2.namedWindow("Resulting Image with Rectangular ROIs", cv2.WINDOW_NORMAL)
     cv2.imshow("Resulting Image with Rectangular ROIs", im)
     cv2.waitKey()
-    expression, calculated_value = getNumber(result)
+    calculated_value = getNumber(result,'result')
+    expression = getNumber(result,'expression')
     #formula =
+    print expression
     return  expression, calculated_value
-def getNumber(l):
+
+def getExpression(number_list,symbol_list):
+    number_list[1::2] = [Label[index] for index in symbol_list]
+    return number_list
+
+def getNumber(l,choice):
     t = [i for i, x in enumerate(l) if x >= 10]
     #print t
     a = 0
@@ -131,19 +138,23 @@ def getNumber(l):
         n = n + 1
     number_list.append(int(last_value))
     symbol_list = [l[index] for index in t]
-    return calculate(number_list,symbol_list)
+    #expression = []
+    if choice == 'result':
+        return calculate(number_list,symbol_list)
+    elif choice == 'expression':
+        return getExpression(number_list,symbol_list)
+
 
 def calculate(number_list,l):
     t = number_list[0:3]
     print 'original first three', t
     del number_list[0:3]
-    expression = []
     if t[1]>=10:
         if t[1] == 10:
             if l.count(11) <= 0 and l.count(12) <= 0:
                 del l[0]
                 c = t[0]+t[2]
-                expression.extend([t[0],'+',t[2]])
+                #expression.extend([t[0],'+',t[2]])
                 number_list.insert(0, c)
 
             else:
@@ -159,7 +170,7 @@ def calculate(number_list,l):
             if l.count(11)<=0 and l.count(12) <= 0:
                 del l[0]
                 c = t[0]-t[2]
-                expression.extend([t[0], '-', t[2]])
+                #expression.extend([t[0], '-', t[2]])
                 number_list.insert(0, c)
             else:
                 symbol = l[0]
@@ -171,12 +182,12 @@ def calculate(number_list,l):
 
         elif t[1] == 12:
             c= t[0]*t[2]
-            expression.extend([t[0], '*', t[2]])
+            #expression.extend([t[0], '*', t[2]])
             del l[0]
             number_list.insert(0,c)
         elif t[1] == 13:
             c= t[0]/t[2]
-            expression.extend([t[0], '/', t[2]])
+            #expression.extend([t[0], '/', t[2]])
             del l[0]
             number_list.insert(0,c)
 
@@ -184,10 +195,11 @@ def calculate(number_list,l):
         return calculate(number_list,l)
     else:
         print c
-        return expression, c
+        return  c
 
 # if __name__ == '__main__':
 #     sys.exit(recognize(sys.argv[1]))
-recognize('image/test135.jpg')
-#l = getNumber([2,10,2,12,5])
+recognize('image/test221.jpg')
+#l = getNumber([2,10,2,12,5],'expression')
+#print l
 
