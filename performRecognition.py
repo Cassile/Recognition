@@ -73,14 +73,20 @@ def recognize(fn):
             cv2.rectangle(im, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (0, 255, 0), 3)
             # Make the rectangular region around the digit
             # Mke the rectangular with some space around
-            leng = int(rect[3] * 1.2)
-            pt1 = int(rect[1] + rect[3] // 2 - leng // 2)
-            pt2 = int(rect[0] + rect[2] // 2 - leng // 2)
-            roi = im_th[pt1:pt1 + leng, pt2:pt2 + leng]
-            #roi = im_th[rect[1]:rect[1]+rect[3],rect[0]:rect[0]+rect[2]]
-            cv2.imshow('A', roi)
-            cv2.waitKey()
-            roi = cv2.resize(roi, (28, 28), interpolation=cv2.INTER_AREA)
+            try:
+                leng = int(rect[3] * 1.2)
+                pt1 = int(rect[1] + rect[3] // 2 - leng // 2)
+                pt2 = int(rect[0] + rect[2] // 2 - leng // 2)
+                roi = im_th[pt1:pt1 + leng, pt2:pt2 + leng]
+                #roi = im_th[rect[1]:rect[1]+rect[3],rect[0]:rect[0]+rect[2]]
+                cv2.imshow('A', roi)
+                cv2.waitKey()
+                roi = cv2.resize(roi, (28, 28), interpolation=cv2.INTER_AREA)
+            except:
+                roi = im_th[rect[1]:rect[1] + rect[3], rect[0]:rect[0] + rect[2]]
+                cv2.imshow('B', roi)
+                cv2.waitKey()
+                roi = cv2.resize(roi, (28, 28), interpolation=cv2.INTER_AREA)
 
 
             roi = cv2.dilate(roi, (3, 3))
@@ -99,44 +105,84 @@ def recognize(fn):
     print result
     return  result
 def getNumber(l):
-    t = [i for i, x in enumerate(l) if x > 10]
+    t = [i for i, x in enumerate(l) if x >= 10]
+    #print t
     a = 0
     number_list=[]
+
     for index in t:
-        num = l[a:index+1]
+        num = l[a:index]
+        #print num
+        value = 0
+        n=0
         for digit in num:
-            num = digit
-        number_list.append(int(num))
-        a = index+2
-    print number_list
+            value = value+ (10 ** (len(num) - n -1 )) * digit
+            n = n+1
+        number_list.append(int(value))
+        number_list.append(int(l[index]))
 
-def calculate(l):
-    t = l[0:3]
-    print t
-    del l[0:3]
-    if t[1]>10:
-        if t[1] == 12:
-            c = t[0]-t[2]
-            l.insert(0, c)
+        a = index+1
+    last = l[t[-1]+1:len(l)]
+    last_value = 0
+    n = 0
+    for digit in last:
+        last_value = last_value + (10 ** (len(last) - n - 1)) * digit
+        n = n + 1
+    number_list.append(int(last_value))
+    symbol_list = [l[index] for index in t]
+    print symbol_list
+    return calculate(number_list,symbol_list)
 
-        elif t[1] == 13:
-            c = t[0]+t[2]
-            l.insert(0,c)
+def calculate(number_list,l):
+    t = number_list[0:3]
+    print 'original first three', t
+    del number_list[0:3]
+    if t[1]>=10:
+        if t[1] == 10:
+            if l.count(11) <= 0 and l.count(12) <= 0:
+                del l[0]
+                c = t[0]+t[2]
+                number_list.insert(0, c)
 
-        elif t[1] == 14:
+            else:
+                symbol = l[0]
+                del l[0]
+                l.append(symbol)
+                number_list.append(t[1])
+                number_list.append(t[0])
+                number_list.insert(0,t[2])
+                print 'after appending',number_list
+
+        elif t[1] == 11:
+            if l.count(11)<=0 and l.count(12) <= 0:
+                del l[0]
+                c = t[0]-t[2]
+                number_list.insert(0, c)
+            else:
+                symbol = l[0]
+                del l[0]
+                l.append(symbol)
+                number_list.append(t[1])
+                number_list.append(t[0])
+                number_list.insert(0,t[2])
+
+        elif t[1] == 12:
             c= t[0]*t[2]
-            l.insert(0,c)
-        elif t[1] == 15:
+            del l[0]
+            number_list.insert(0,c)
+        elif t[1] == 13:
             c= t[0]/t[2]
-            l.insert(0,c)
+            del l[0]
+            number_list.insert(0,c)
 
-    if len(l)>2:
-        return calculate(l)
+    if len(number_list)>2:
+        return calculate(number_list,l)
     else:
         print c
         return c
 
 # if __name__ == '__main__':
 #     sys.exit(recognize(sys.argv[1]))
-recognize('image/test89.jpg')
-#getNumber([8,5,13,4,9])
+#recognize('image/test998.jpg')
+l = getNumber([2,10,2,12,5])
+
